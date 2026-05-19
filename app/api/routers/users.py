@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from app.db import get_db
+from app.core.database import get_db
 
 from app.schemas.user_schema import UserCreate
 from app.services.user_service import create_user_service

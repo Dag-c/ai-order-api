@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.db import get_db
+from app.core.database import get_db
 from app.schemas.chat_request_schema import ChatRequest
 from app.services.chat_service import process_chat
 

@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from app.models.order_item import OrderItem
 import uuid
 
-from app.db import Base
+from app.core.database import Base
 
 
 class Order(Base):

@@ -1,14 +1,14 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-from app.schemas.order_item_llm import OrderItemLLM
+from app.schemas.cart_item_schema import CartItemSchema
 
 
 class ChatSessionSchema(BaseModel):
 
     current_state: str = "idle"
 
-    cart_items: List[OrderItemLLM] = Field(default_factory=list)
+    cart_items: List[CartItemSchema] = Field(default_factory=list)
 
     customer_name: Optional[str] = None
 

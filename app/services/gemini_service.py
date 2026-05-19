@@ -1,16 +1,11 @@
-import os
 import json
 import httpx
-
-from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 
 from app.schemas.chat_llm_schema import ChatLLM
 from app.services.product_service import get_products_service
+from app.core.config import GEMINI_API_KEY
 
-load_dotenv()
-
-API_KEY = os.getenv("GEMINI_API_KEY")
 
 URL = (
     "https://generativelanguage.googleapis.com/"
@@ -510,7 +505,7 @@ USER MESSAGE
     }
 
     params = {
-        "key": API_KEY
+        "key": GEMINI_API_KEY
     }
 
     # =========================================

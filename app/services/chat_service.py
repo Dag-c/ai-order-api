@@ -1,14 +1,11 @@
 from app.services.gemini_service import analyze_chat_message
 from app.core.chat_state_machine import handle_chat_state
-from app.core.session_store import sessions
+from app.core.session_store import get_session, save_session
 from app.schemas.chat_session_schema import ChatSessionSchema
 
 async def process_chat(session_id, message, db):
 
-    if session_id not in sessions:
-        sessions[session_id] = ChatSessionSchema()
-    
-    session = sessions[session_id]
+    session = get_session(session_id)
 
     llm_response = await analyze_chat_message(
         message,
@@ -40,5 +37,6 @@ async def process_chat(session_id, message, db):
         session,
         db
     )
-
+    save_session(session_id, session)
+    
     return response

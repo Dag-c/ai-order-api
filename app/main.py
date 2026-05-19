@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from app.db import get_db, engine, Base
-from app.models.product_model import Product
+from app.core.database import get_db, engine, Base
+from app.core.startup_checks import run_startup_checks
 from app.api.api_v1 import api_router
+
+run_startup_checks()
 
 app = FastAPI(title="AI Order System")
 

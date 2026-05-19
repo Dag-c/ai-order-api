@@ -1,13 +1,7 @@
-import os
-from dotenv import load_dotenv
 from pwdlib import PasswordHash
 from datetime import datetime, timedelta, timezone
 from jose import jwt 
-
-load_dotenv()
-
-SECRET_APP_KEY = os.getenv("SECRET_APP_KEY")
-ALGORITHM = "HS256"
+from app.core.config import SECRET_APP_KEY, ALGORITHM
 
 password_hash = PasswordHash.recommended()
 

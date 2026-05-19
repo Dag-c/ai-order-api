@@ -1,8 +1,5 @@
 from sqlalchemy.orm import Session
-
-from app.core.states.building_order_state import (
-    handle_building_order_state
-)
+from app.core.states.building_order_state import handle_building_order_state
 
 
 async def handle_review_order_state(
@@ -16,19 +13,20 @@ async def handle_review_order_state(
     # =========================
     # REVIEW ORDER
     # =========================
-
     if intent == "review_order":
 
         total = sum(
-            item["price"] * item["quantity"]
-            for item in session.cart_items
+            item.subtotal for item in session.cart_items
         )
 
         return {
             "type": "order_summary",
             "message": "Este es tu pedido:",
             "data": {
-                "items": session.cart_items,
+                "items": [
+                    item.model_dump()
+                    for item in session.cart_items
+                ],
                 "total": total
             }
         }
@@ -37,12 +35,9 @@ async def handle_review_order_state(
     # BACK TO BUILDING ORDER
     # ADD PRODUCTS
     # =========================
-
     if intent == "add_to_cart":
 
-        session.current_state = (
-            "building_order"
-        )
+        session.current_state = "building_order"
 
         return await handle_building_order_state(
             llm_data,
@@ -54,12 +49,9 @@ async def handle_review_order_state(
     # BACK TO BUILDING ORDER
     # REMOVE PRODUCTS
     # =========================
-
     if intent == "remove_from_cart":
 
-        session.current_state = (
-            "building_order"
-        )
+        session.current_state = "building_order"
 
         return await handle_building_order_state(
             llm_data,
@@ -70,12 +62,7 @@ async def handle_review_order_state(
     # =========================
     # CHECKOUT TRANSITION
     # =========================
-
     if intent == "checkout":
-
-        # =========================
-        # VALIDATE EMPTY CART
-        # =========================
 
         if not session.cart_items:
 
@@ -99,16 +86,15 @@ async def handle_review_order_state(
             ),
             "data": {}
         }
+
     # =========================
     # DEFAULT
     # =========================
-
     return {
         "type": "message",
         "message": (
             "No entendí 😅 "
-            "¿quieres confirmar tu pedido "
-            "o modificar algo?"
+            "¿quieres confirmar tu pedido o modificar algo?"
         ),
         "data": {}
     }

@@ -16,13 +16,16 @@ def resolve_products_from_items(db: Session, items: list):
         ).first()
 
         if not product:
-            continue  # o marcar error después
+            continue
+
+        unit_price = float(product.price)
 
         resolved_items.append({
             "product_id": str(product.id),
             "product_name": product.name,
             "quantity": quantity,
-            "price": float(product.price)
+            "unit_price": unit_price,
+            "subtotal": unit_price * quantity
         })
 
     return resolved_items

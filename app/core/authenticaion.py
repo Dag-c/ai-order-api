@@ -7,13 +7,11 @@ from fastapi.security.http import HTTPAuthorizationCredentials
 
 from sqlalchemy.orm import Session
 
-from app.db import get_db
+from app.core.database import get_db
 
 from app.repositories.user_repository import (
     get_user_by_email
 )
-
-from app.models.user_model import User
 
 from app.core.security import (
     SECRET_APP_KEY,

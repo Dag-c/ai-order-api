@@ -8,36 +8,48 @@ from app.services.product_resolver_service import (
     resolve_products_from_items
 )
 
+from app.schemas.cart_item_schema import (
+    CartItemSchema
+)
+
 
 async def handle_idle_state(
     data,
     session,
     db: Session
 ):
+
     intent = data.intent
     data = data.data or {}
 
     # =========================
     # GREETING
     # =========================
+
     if intent == "greeting":
 
         return {
             "type": "message",
-            "message": "Hola, bienvenido. ¿Qué te gustaría ordenar?",
+            "message": (
+                "Hola, bienvenido. "
+                "¿Qué te gustaría ordenar?"
+            ),
             "data": {}
         }
 
     # =========================
     # ASK MENU
     # =========================
+
     if intent == "ask_menu":
 
         products = await get_available_products_service(db)
 
         return {
             "type": "menu",
-            "message": "Estos son los platillos disponibles",
+            "message": (
+                "Estos son los platillos disponibles"
+            ),
             "data": {
                 "products": products
             }
@@ -46,6 +58,7 @@ async def handle_idle_state(
     # =========================
     # ASK AVAILABILITY
     # =========================
+
     if intent == "ask_availability":
 
         raw_items = data.get("items", [])
@@ -59,7 +72,9 @@ async def handle_idle_state(
 
             return {
                 "type": "message",
-                "message": "No encontré ese producto",
+                "message": (
+                    "No encontré ese producto"
+                ),
                 "data": {}
             }
 
@@ -70,7 +85,9 @@ async def handle_idle_state(
 
         return {
             "type": "availability",
-            "message": "Sí tenemos disponible:",
+            "message": (
+                "Sí tenemos disponible:"
+            ),
             "data": {
                 "products": available_products
             }
@@ -80,6 +97,7 @@ async def handle_idle_state(
     # ADD TO CART
     # TRANSITION → BUILDING_ORDER
     # =========================
+
     if intent == "add_to_cart":
 
         raw_items = data.get("items", [])
@@ -93,26 +111,48 @@ async def handle_idle_state(
 
             return {
                 "type": "message",
-                "message": "No pude agregar productos",
+                "message": (
+                    "No pude agregar productos"
+                ),
                 "data": {}
             }
 
+        # =========================
         # TRANSITION
-        session.current_state = "building_order"
+        # =========================
 
-        session.cart_items.extend(resolved_items)
+        session.current_state = (
+            "building_order"
+        )
+
+        # =========================
+        # CONVERT DICTS → SCHEMA
+        # =========================
+
+        session.cart_items.extend(
+            [
+                CartItemSchema(**item)
+                for item in resolved_items
+            ]
+        )
 
         return {
             "type": "message",
-            "message": "Agregado al carrito. ¿Deseas algo más?",
+            "message": (
+                "Agregado al carrito 👍 "
+                "¿Deseas algo más?"
+            ),
             "data": {}
         }
 
     # =========================
     # UNKNOWN
     # =========================
+
     return {
         "type": "message",
-        "message": "No entendí tu solicitud",
+        "message": (
+            "No entendí tu solicitud"
+        ),
         "data": {}
     }

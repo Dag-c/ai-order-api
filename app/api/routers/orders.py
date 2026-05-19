@@ -1,7 +1,7 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException
-from app.db import get_db
+from app.core.database import get_db
 from app.services.order_service import get_orders_service
 from app.schemas.update_order_status_schema import UpdateOrderStatusSchema
 from app.repositories.order_repository import update_order_status

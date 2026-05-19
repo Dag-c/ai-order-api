@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
 
-from app.db import Base
+from app.core.database import Base
 
 
 class OrderItem(Base):

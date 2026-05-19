@@ -1,23 +1,36 @@
 from sqlalchemy.orm import Session
 
-from app.schemas.order_schema import OrderCreate
-from app.schemas.order_item_schema import OrderItemCreate
+from app.schemas.order_schema import (
+    OrderCreate
+)
 
-from app.repositories.order_repository import create_order, get_orders
-from app.repositories.order_item_repository import create_order_items, get_order_items_by_order_id
+from app.schemas.order_item_schema import (
+    OrderItemCreate
+)
+
+from app.repositories.order_repository import (
+    create_order,
+    get_orders
+)
+
+from app.repositories.order_item_repository import (
+    create_order_items
+)
 
 
 def create_order_service(
     db: Session,
     session
 ):
+
     try:
+
         # =========================
         # CALCULATE TOTAL
         # =========================
 
         total_price = sum(
-            item["price"] * item["quantity"]
+            item.subtotal
             for item in session.cart_items
         )
 
@@ -29,20 +42,20 @@ def create_order_service(
 
         for item in session.cart_items:
 
-            subtotal = item["price"] * item["quantity"]
-
             order_item = OrderItemCreate(
 
-                product_id=item["product_id"],
+                product_id=item.product_id,
 
-                quantity=item["quantity"],
+                quantity=item.quantity,
 
-                unit_price=item["price"],
+                unit_price=item.unit_price,
 
-                subtotal=subtotal
+                subtotal=item.subtotal
             )
 
-            order_items.append(order_item)
+            order_items.append(
+                order_item
+            )
 
         # =========================
         # BUILD ORDER SCHEMA
@@ -87,15 +100,29 @@ def create_order_service(
         # =========================
 
         return {
-            "order_id": str(created_order.id),
-            "total": total_price,
+
+            "order_id": str(
+                created_order.id
+            ),
+
+            "total": float(
+                total_price
+            ),
+
             "status": created_order.status
         }
+
     except Exception as e:
+
         db.rollback()
+
         raise e
 
-def get_orders_service(db: Session):
+
+def get_orders_service(
+    db: Session
+):
+
     orders = get_orders(db)
 
     result = []
@@ -107,19 +134,44 @@ def get_orders_service(db: Session):
         for item in order.items:
 
             serialized_items.append({
-                "product_id": str(item.product_id),
+
+                "product_id": str(
+                    item.product_id
+                ),
+
                 "quantity": item.quantity,
-                "unit_price": float(item.unit_price),
-                "subtotal": float(item.subtotal)
+
+                "unit_price": float(
+                    item.unit_price
+                ),
+
+                "subtotal": float(
+                    item.subtotal
+                )
             })
 
         result.append({
+
             "id": str(order.id),
-            "customer_name": order.customer_name,
-            "customer_phone": order.customer_phone,
-            "delivery_address": order.delivery_address,
+
+            "customer_name": (
+                order.customer_name
+            ),
+
+            "customer_phone": (
+                order.customer_phone
+            ),
+
+            "delivery_address": (
+                order.delivery_address
+            ),
+
             "status": order.status,
-            "total": float(order.total_price),
+
+            "total": float(
+                order.total_price
+            ),
+
             "items": serialized_items
         })
 
