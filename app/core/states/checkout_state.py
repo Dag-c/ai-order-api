@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.services.order_service import create_order_service
 
+from app.core.events import publish_order_event
+
 
 async def handle_checkout_state(
     llm_data,
@@ -61,6 +63,10 @@ async def handle_checkout_state(
     # =========================
 
     created_order = create_order_service(db, session)
+    publish_order_event(
+        event_type="order_created",
+        data=created_order.model_dump(mode="json")
+    )
 
     # =========================
     # RESET SESSION
@@ -81,8 +87,8 @@ async def handle_checkout_state(
         "type": "order_created",
         "message": "Tu orden fue creada correctamente",
         "data": {
-            "order_id": created_order["order_id"],
-            "total": created_order["total"],
-            "status": created_order["status"]
+            "order_id": created_order.id,
+            "total": created_order.total,
+            "status": created_order.status
         }
     }
