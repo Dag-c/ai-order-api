@@ -91,3 +91,5 @@ SESSION_TTL_SECONDS = int(
         3600
     )
 )
+
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
