@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from fastapi import APIRouter
 from fastapi import WebSocket
@@ -9,6 +10,8 @@ from sqlalchemy.orm import Session
 from app.core.websocket_manager import manager
 from app.core.database import SessionLocal
 from app.core.authenticaion import validate_token
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -38,14 +41,14 @@ async def orders_websocket(websocket: WebSocket):
         # =========================
         await manager.connect(websocket)
 
-        print("🟢 WS conectado")
+        logger.info("WebSocket connected")
 
         while True:
             await asyncio.sleep(60)
 
     except Exception as e:
 
-        print("❌ WS auth error:", e)
+        logger.exception("WebSocket auth error")
 
         await websocket.close(code=1008)
 
@@ -55,4 +58,4 @@ async def orders_websocket(websocket: WebSocket):
 
         db.close()
 
-        print("🔴 WS desconectado")
+        logger.info("WebSocket disconnected")

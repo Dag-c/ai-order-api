@@ -4,6 +4,7 @@ from uuid import UUID
 from app.models.order_model import Order
 from app.models.order_item import OrderItem
 from app.schemas.order_schema import OrderCreate
+from app.repositories.order_query_builder import OrderQueryBuilder
 
 
 
@@ -30,13 +31,24 @@ def create_order(
 
     return order
 
-def get_orders(db: Session):
-    return (
-        db.query(Order)
-        .options(selectinload(Order.items))
+def get_orders(db: Session, filters=None):
+
+    builder = OrderQueryBuilder()
+
+    if filters:
+        builder.apply_date_filters(filters)
+        builder.apply_status(filters)
+
+    query = (
+        builder.build()
+        .options(
+            selectinload(Order.items)
+            .selectinload(OrderItem.product)
+        )
         .order_by(Order.created_at.desc())
-        .all()
     )
+
+    return db.execute(query).scalars().all()
 
 def get_order_by_id(db:Session, order_id: UUID):
     return (db.execute(select(Order).where(Order.id == order_id)).scalar_one_or_none())

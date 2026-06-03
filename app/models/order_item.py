@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Numeric, TIMESTAMP, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 
@@ -20,3 +21,5 @@ class OrderItem(Base):
     subtotal = Column(Numeric(10, 2), nullable=False)
 
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+    product = relationship("Product")

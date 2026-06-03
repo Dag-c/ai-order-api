@@ -1,5 +1,5 @@
 from sqlalchemy import select, and_
-from datetime import datetime, date, time
+from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
 from app.models.order_model import Order
@@ -10,7 +10,7 @@ class OrderQueryBuilder:
     UTC = ZoneInfo("UTC")
 
     def __init__(self):
-        self.query = select(Order).options()
+        self.query = select(Order)
 
     def apply_date_filters(self, filters):
 
@@ -26,10 +26,6 @@ class OrderQueryBuilder:
             #  3. CONVERTIR A UTC (lo que usa la DB)
             start_utc = start_local.astimezone(self.UTC)
             end_utc = end_local.astimezone(self.UTC)
-
-            print("hoy MX:", today_local)
-            print("start UTC:", start_utc)
-            print("end UTC:", end_utc)
 
             self.query = self.query.where(
                 and_(

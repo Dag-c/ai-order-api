@@ -1,34 +1,39 @@
 import asyncio
 import json
+import logging
 
 from app.core.session_store import redis_client
 from app.core.websocket_manager import manager
 
-ORDERS_CHANNEL = "orders"
+logger = logging.getLogger(__name__)
 
+ORDERS_CHANNEL = "orders"
 
 async def redis_listener():
     pubsub = redis_client.pubsub()
-
     pubsub.subscribe(ORDERS_CHANNEL)
 
-    print("🟢 Redis listener iniciado...")
+    logger.info("Redis listener started")
 
-    while True:
-        message = pubsub.get_message(ignore_subscribe_messages=True)
+    try:
+        while True:
+            message = pubsub.get_message(ignore_subscribe_messages=True)
 
-        if message:
-            try:
-                if message["type"] != "message":
-                    continue
+            if not message:
+                await asyncio.sleep(0.5)
+                continue
 
-                data = json.loads(message["data"])
+            if message["type"] != "message":
+                continue
 
-                print("📩 Evento recibido:", data)
+            data = json.loads(message["data"])
 
-                await manager.broadcast(data)
+            logger.info("Redis event received: %s", data)
 
-            except Exception as e:
-                print("❌ Error procesando mensaje:", e)
+            await manager.broadcast(data)
 
-        await asyncio.sleep(0.5)
+    except asyncio.CancelledError:
+        logger.info("Redis listener shutting down")
+
+    finally:
+        pubsub.close()

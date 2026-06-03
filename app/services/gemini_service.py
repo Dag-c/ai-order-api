@@ -1,3 +1,4 @@
+import logging
 import json
 import httpx
 from sqlalchemy.orm import Session
@@ -6,6 +7,7 @@ from app.schemas.chat_llm_schema import ChatLLM
 from app.services.product_service import get_products_service
 from app.core.config import GEMINI_API_KEY
 
+logger = logging.getLogger(__name__)
 
 URL = (
     "https://generativelanguage.googleapis.com/"
@@ -556,8 +558,8 @@ USER MESSAGE
     # DEBUG
     # =========================================
 
-    print("STATUS:", response.status_code)
-    print("RAW RESPONSE:", response.text)
+    logger.debug("STATUS: %s", response.status_code)
+    logger.debug("RAW RESPONSE: %s", response.text)
 
     # =========================================
     # PARSE RESPONSE

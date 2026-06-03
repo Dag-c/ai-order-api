@@ -1,9 +1,11 @@
 import redis
+import logging
 from sqlalchemy import text
 
 from app.core.database import engine
 from app.core.config import REDIS_URL
 
+logger = logging.getLogger(__name__)
 
 def validate_database():
 
@@ -15,9 +17,14 @@ def validate_database():
                 text("SELECT 1")
             )
 
-        print(" Database connected")
+        logger.info("Database connected")
 
     except Exception as e:
+
+        logger.error(
+            "Database connection failed: %s",
+            e
+        )
 
         raise RuntimeError(
             f"Database connection failed: {e}"
@@ -35,9 +42,14 @@ def validate_redis():
 
         client.ping()
 
-        print(" Redis connected")
+        logger.info("Redis connected")
 
     except Exception as e:
+
+        logger.exception(
+            "Redis connection failed: %s",
+            e
+        )
 
         raise RuntimeError(
             f"Redis connection failed: {e}"
@@ -46,10 +58,10 @@ def validate_redis():
 
 def run_startup_checks():
 
-    print(" Running startup checks...")
+    logger.info("Running startup checks")
 
     validate_database()
 
     validate_redis()
 
-    print(" All startup checks passed")
+    logger.info("All startup checks passed")

@@ -20,9 +20,14 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db), curren
 
     return {
         "message": "Product created",
-        "product": {
+          "product": {
             "id": str(new_product.id),
-            "name": new_product.name
+            "name": new_product.name,
+            "description": new_product.description,
+            "price":  new_product.price,
+            "created_at": new_product.created_at,
+            "stock": new_product.stock,
+            "is_available": new_product.is_available
         }
     }
 
@@ -70,8 +75,8 @@ def update_product(product_id: UUID, product: ProductUpdate, db: Session = Depen
         }
     }
 
-@router.delete("/")
-def delete_product(product_id: UUID, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+@router.delete("/{product_id}")
+def delete_product(product_id: str, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     product = delete_product_service(db, product_id)
 
     if not product:

@@ -21,7 +21,7 @@ def resolve_products_from_items(db: Session, items: list):
         unit_price = float(product.price)
 
         resolved_items.append({
-            "product_id": str(product.id),
+            "product_id": product.id,
             "product_name": product.name,
             "quantity": quantity,
             "unit_price": unit_price,

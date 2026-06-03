@@ -10,21 +10,23 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 
 from app.repositories.user_repository import (
-    get_user_by_email
+get_user_by_email
 )
 
 from app.core.security import (
-    SECRET_APP_KEY,
-    ALGORITHM
+SECRET_APP_KEY,
+ALGORITHM
 )
 
 security = HTTPBearer()
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    token = credentials.credentials
+# =========================
+
+# REUSABLE TOKEN VALIDATION
+
+# =========================
+
+def validate_token(token: str, db: Session):
 
     credentials_exception = HTTPException(
         status_code=401,
@@ -53,3 +55,17 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+# =========================
+
+# REST AUTH DEPENDENCY
+
+# =========================
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+    ):
+    token = credentials.credentials
+
+    return validate_token(token, db)
