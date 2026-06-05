@@ -1,0 +1,110 @@
+{
+  "docker_usage": {
+    "production_dockerfile": {
+      "file": "Dockerfile",
+      "base_image": "python:3.12-slim",
+      "install": "pip install --no-cache-dir -r requirements.txt",
+      "runtime": "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}",
+      "observations": [
+        "Uses dynamic PORT fallback suitable for hosted container platforms.",
+        "No Docker HEALTHCHECK found.",
+        "No non-root runtime user configured."
+      ]
+    },
+    "development_dockerfile": {
+      "file": "Dockerfile.dev",
+      "port": 8000,
+      "runtime": "python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    },
+    "compose": {
+      "file": "docker-compose.dev.yml",
+      "services": [
+        "api",
+        "redis"
+      ],
+      "api": "Builds local app, mounts source volume, loads .env.development, runs uvicorn --reload.",
+      "redis": "redis:7 exposed on 6379."
+    }
+  },
+  "render_configuration": {
+    "render_yaml_found": false,
+    "render_ready_signals": [
+      "Dockerfile uses ${PORT:-10000}.",
+      "HTTP /health endpoint exists."
+    ],
+    "missing_or_unclear": [
+      "No explicit Render service config found.",
+      "No documented healthcheck path in deployment config.",
+      "No worker count/runtime process guidance found."
+    ]
+  },
+  "environment_variables": {
+    "required": [
+      "DB_USER",
+      "DB_PASSWORD",
+      "DB_HOST",
+      "DB_NAME",
+      "GEMINI_API_KEY",
+      "SECRET_APP_KEY"
+    ],
+    "optional_with_defaults": {
+      "ENV": "development",
+      "DB_PORT": 5432,
+      "ALGORITHM": "HS256",
+      "REDIS_URL": "redis://redis:6379",
+      "SESSION_TTL_SECONDS": 3600,
+      "CORS_ORIGINS": ""
+    },
+    "notes": [
+      ".env and .env.* were intentionally ignored.",
+      "CORS_ORIGINS is not required even for production.",
+      "SESSION_TTL_SECONDS env is currently not used by session_store."
+    ]
+  },
+  "startup_process": [
+    "setup_logging configures stdout logging.",
+    "run_startup_checks validates PostgreSQL and Redis at import time.",
+    "FastAPI lifespan starts Redis listener task.",
+    "Application serves HTTP endpoints and WebSocket endpoint."
+  ],
+  "health_checks": {
+    "application_endpoint": "/health",
+    "behavior": "Runs SELECT 1 against DB and returns status/db scalar.",
+    "container_healthcheck": false
+  },
+  "database_dependencies": {
+    "database": "PostgreSQL",
+    "driver": "psycopg2 via SQLAlchemy URL postgresql+psycopg2",
+    "sslmode": "require",
+    "schema_sources": [
+      "SQLAlchemy models",
+      "database/schema.sql"
+    ],
+    "migration_tool_detected": false
+  },
+  "redis_dependencies": {
+    "usage": [
+      "chat session storage",
+      "order event pub/sub",
+      "startup health validation"
+    ],
+    "default_url": "redis://redis:6379",
+    "client_type": "synchronous redis client"
+  },
+  "external_api_dependencies": [
+    {
+      "name": "Google Gemini generateContent",
+      "configured_by": "GEMINI_API_KEY",
+      "timeout_seconds": 30,
+      "hardcoded_model_url": "v1beta/models/gemini-3.1-flash-lite:generateContent"
+    }
+  ],
+  "deployment_risks": [
+    "No migration workflow detected.",
+    "Synchronous Redis and SQLAlchemy usage can limit async throughput.",
+    "In-memory WebSocket connection manager is sensitive to multi-worker/multi-instance deployment.",
+    "No API rate limiting or WAF guidance detected.",
+    "No container healthcheck or non-root user configured.",
+    "Startup checks at import time can make deployments fail before lifecycle logging/readiness starts."
+  ]
+}

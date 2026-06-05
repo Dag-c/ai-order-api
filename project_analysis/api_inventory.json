@@ -1,0 +1,140 @@
+{
+  "base_prefix": "/api/v1",
+  "endpoints": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "router_module": "app/main.py",
+      "authentication_required": false,
+      "request_schema": null,
+      "response_schema": "inline dict",
+      "purpose": "Health check with database SELECT 1."
+    },
+    {
+      "path": "/api/v1/login/",
+      "method": "POST",
+      "router_module": "app/api/routers/auth.py",
+      "authentication_required": false,
+      "request_schema": "LoginSchema",
+      "response_schema": "inline token dict",
+      "purpose": "Authenticate user and return bearer access token."
+    },
+    {
+      "path": "/api/v1/users/",
+      "method": "POST",
+      "router_module": "app/api/routers/users.py",
+      "authentication_required": false,
+      "request_schema": "UserCreate",
+      "response_schema": "inline user creation dict",
+      "purpose": "Create user account."
+    },
+    {
+      "path": "/api/v1/products/",
+      "method": "POST",
+      "router_module": "app/api/routers/products.py",
+      "authentication_required": true,
+      "request_schema": "ProductCreate",
+      "response_schema": "inline product dict",
+      "purpose": "Create product."
+    },
+    {
+      "path": "/api/v1/products/",
+      "method": "GET",
+      "router_module": "app/api/routers/products.py",
+      "authentication_required": false,
+      "request_schema": null,
+      "response_schema": "list[Product ORM objects serialized by FastAPI]",
+      "purpose": "List products."
+    },
+    {
+      "path": "/api/v1/products/{product_id}",
+      "method": "GET",
+      "router_module": "app/api/routers/products.py",
+      "authentication_required": false,
+      "request_schema": null,
+      "response_schema": "Product ORM object or null",
+      "purpose": "Get product by ID."
+    },
+    {
+      "path": "/api/v1/products/{product_id}",
+      "method": "PUT",
+      "router_module": "app/api/routers/products.py",
+      "authentication_required": true,
+      "request_schema": "ProductCreate",
+      "response_schema": "inline product dict",
+      "purpose": "Replace product fields."
+    },
+    {
+      "path": "/api/v1/products/{product_id}",
+      "method": "PATCH",
+      "router_module": "app/api/routers/products.py",
+      "authentication_required": true,
+      "request_schema": "ProductUpdate",
+      "response_schema": "inline product dict",
+      "purpose": "Partially update product."
+    },
+    {
+      "path": "/api/v1/products/{product_id}",
+      "method": "DELETE",
+      "router_module": "app/api/routers/products.py",
+      "authentication_required": true,
+      "request_schema": null,
+      "response_schema": "inline delete result dict",
+      "purpose": "Delete product by ID."
+    },
+    {
+      "path": "/api/v1/orders/",
+      "method": "GET",
+      "router_module": "app/api/routers/orders.py",
+      "authentication_required": true,
+      "request_schema": "query params: from_date, to_date, today, status",
+      "response_schema": "list[OrderDTO]",
+      "purpose": "List orders with date/status filters."
+    },
+    {
+      "path": "/api/v1/orders/",
+      "method": "POST",
+      "router_module": "app/api/routers/orders.py",
+      "authentication_required": false,
+      "request_schema": null,
+      "response_schema": "inline placeholder dict",
+      "purpose": "Placeholder order creation endpoint."
+    },
+    {
+      "path": "/api/v1/orders/{order_id}/status",
+      "method": "PATCH",
+      "router_module": "app/api/routers/orders.py",
+      "authentication_required": true,
+      "request_schema": "UpdateOrderStatusSchema",
+      "response_schema": "inline status update dict",
+      "purpose": "Update order status."
+    },
+    {
+      "path": "/api/v1/chat/",
+      "method": "POST",
+      "router_module": "app/api/routers/chat.py",
+      "authentication_required": false,
+      "request_schema": "ChatRequest",
+      "response_schema": "chat response dict",
+      "purpose": "Process AI chat message and advance ordering state."
+    },
+    {
+      "path": "/api/v1/dashboard/summary",
+      "method": "GET",
+      "router_module": "app/api/routers/dashboard.py",
+      "authentication_required": true,
+      "request_schema": null,
+      "response_schema": "DashboardSummaryResponse",
+      "purpose": "Return dashboard KPIs, top products, recent orders, and sales by day."
+    },
+    {
+      "path": "/api/v1/ws/orders",
+      "method": "WEBSOCKET",
+      "router_module": "app/api/websockets/orders_ws.py",
+      "authentication_required": true,
+      "request_schema": "query param: token",
+      "response_schema": "order event messages",
+      "purpose": "Receive real-time order events."
+    }
+  ]
+}

@@ -1,15 +1,12 @@
 import redis
 
 from app.schemas.chat_session_schema import ChatSessionSchema
-from app.core.config import REDIS_URL
+from app.core.config import REDIS_URL, SESSION_TTL_SECONDS
 
 redis_client = redis.from_url(
     REDIS_URL,
     decode_responses=True
 )
-
-SESSION_TTL_SECONDS = 60 * 60
-
 
 def get_session(session_id: str) -> ChatSessionSchema:
     data = redis_client.get(session_id)

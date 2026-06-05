@@ -1,0 +1,184 @@
+{
+  "features": [
+    {
+      "name": "Authentication",
+      "description": "Email/password login with hashed password verification and JWT bearer token issuance.",
+      "involved_modules": [
+        "app/api/routers/auth.py",
+        "app/services/auth_service.py",
+        "app/core/security.py",
+        "app/core/authenticaion.py",
+        "app/repositories/user_repository.py"
+      ],
+      "involved_endpoints": [
+        "POST /api/v1/login/"
+      ],
+      "involved_services": [
+        "login_service"
+      ]
+    },
+    {
+      "name": "User Management",
+      "description": "Creates users with hashed passwords and role field.",
+      "involved_modules": [
+        "app/api/routers/users.py",
+        "app/services/user_service.py",
+        "app/repositories/user_repository.py",
+        "app/models/user_model.py",
+        "app/schemas/user_schema.py"
+      ],
+      "involved_endpoints": [
+        "POST /api/v1/users/"
+      ],
+      "involved_services": [
+        "create_user_service"
+      ]
+    },
+    {
+      "name": "Product Management",
+      "description": "Product creation, listing, retrieval, update, partial update, and deletion.",
+      "involved_modules": [
+        "app/api/routers/products.py",
+        "app/services/product_service.py",
+        "app/repositories/product_repository.py",
+        "app/models/product_model.py",
+        "app/schemas/product_schema.py"
+      ],
+      "involved_endpoints": [
+        "POST /api/v1/products/",
+        "GET /api/v1/products/",
+        "GET /api/v1/products/{product_id}",
+        "PUT /api/v1/products/{product_id}",
+        "PATCH /api/v1/products/{product_id}",
+        "DELETE /api/v1/products/{product_id}"
+      ],
+      "involved_services": [
+        "create_product_service",
+        "get_products_service",
+        "get_product_by_id_service",
+        "update_product_service",
+        "update_product_patch_service",
+        "delete_product_service"
+      ]
+    },
+    {
+      "name": "Order Management",
+      "description": "Order listing with date/status filters and order status updates.",
+      "involved_modules": [
+        "app/api/routers/orders.py",
+        "app/services/order_service.py",
+        "app/repositories/order_repository.py",
+        "app/repositories/order_query_builder.py",
+        "app/mappers/order_mapper.py",
+        "app/models/order_model.py",
+        "app/models/order_item.py"
+      ],
+      "involved_endpoints": [
+        "GET /api/v1/orders/",
+        "POST /api/v1/orders/",
+        "PATCH /api/v1/orders/{order_id}/status"
+      ],
+      "involved_services": [
+        "get_orders_service",
+        "create_order_service"
+      ]
+    },
+    {
+      "name": "AI Chat Ordering",
+      "description": "Natural-language restaurant ordering flow using Gemini extraction, Redis session state, product resolution, and a state machine.",
+      "involved_modules": [
+        "app/api/routers/chat.py",
+        "app/services/chat_service.py",
+        "app/services/gemini_service.py",
+        "app/services/product_resolver_service.py",
+        "app/core/chat_state_machine.py",
+        "app/core/states/*.py",
+        "app/core/session_store.py"
+      ],
+      "involved_endpoints": [
+        "POST /api/v1/chat/"
+      ],
+      "involved_services": [
+        "process_chat",
+        "analyze_chat_message",
+        "resolve_products_from_items"
+      ]
+    },
+    {
+      "name": "Checkout and Order Creation",
+      "description": "Converts a completed chat session cart into persistent Order and OrderItem records, then publishes a real-time order event.",
+      "involved_modules": [
+        "app/core/states/checkout_state.py",
+        "app/services/order_service.py",
+        "app/repositories/order_repository.py",
+        "app/repositories/order_item_repository.py",
+        "app/core/events.py"
+      ],
+      "involved_endpoints": [
+        "POST /api/v1/chat/"
+      ],
+      "involved_services": [
+        "create_order_service",
+        "publish_order_event"
+      ]
+    },
+    {
+      "name": "Dashboard Metrics",
+      "description": "Provides KPI counts, revenue, pending/preparing/delivering totals, top products, recent orders, and sales by day.",
+      "involved_modules": [
+        "app/api/routers/dashboard.py",
+        "app/services/dashboard_service.py",
+        "app/repositories/dashboard_repository.py",
+        "app/schemas/dashboard_schema.py"
+      ],
+      "involved_endpoints": [
+        "GET /api/v1/dashboard/summary"
+      ],
+      "involved_services": [
+        "get_total_orders_service",
+        "get_total_revenue_service",
+        "get_pending_orders_service",
+        "get_preparing_orders_service",
+        "get_delivering_orders_service",
+        "get_top_products_service",
+        "get_recent_orders_service",
+        "get_sales_by_day_service"
+      ]
+    },
+    {
+      "name": "Real-Time Notifications",
+      "description": "Authenticated WebSocket clients receive order events via Redis pub/sub and an in-process connection manager.",
+      "involved_modules": [
+        "app/api/websockets/orders_ws.py",
+        "app/core/websocket_manager.py",
+        "app/core/redis_listener.py",
+        "app/core/events.py"
+      ],
+      "involved_endpoints": [
+        "WEBSOCKET /api/v1/ws/orders"
+      ],
+      "involved_services": [
+        "redis_listener",
+        "publish_order_event",
+        "ConnectionManager.broadcast"
+      ]
+    },
+    {
+      "name": "Health and Startup Checks",
+      "description": "Validates database and Redis availability on startup and exposes a DB-backed health endpoint.",
+      "involved_modules": [
+        "app/main.py",
+        "app/core/startup_checks.py",
+        "app/core/database.py"
+      ],
+      "involved_endpoints": [
+        "GET /health"
+      ],
+      "involved_services": [
+        "run_startup_checks",
+        "validate_database",
+        "validate_redis"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "entities": [
+    {
+      "name": "User",
+      "model": "app/models/user_model.py",
+      "schemas": [
+        "UserCreate",
+        "UserUpdate"
+      ],
+      "purpose": "Represents employee/admin user credentials and role.",
+      "major_fields": {
+        "id": "UUID primary key",
+        "email": "unique login identifier",
+        "password_hash": "hashed password",
+        "role": "role string, defaults to employee",
+        "created_at": "creation timestamp"
+      },
+      "relationships": [
+        "Used by JWT auth lookup through email."
+      ]
+    },
+    {
+      "name": "Product",
+      "model": "app/models/product_model.py",
+      "schemas": [
+        "ProductCreate",
+        "ProductUpdate"
+      ],
+      "purpose": "Menu item available for ordering.",
+      "major_fields": {
+        "id": "UUID primary key",
+        "name": "product display name",
+        "description": "optional details",
+        "price": "numeric unit price",
+        "stock": "inventory count",
+        "is_available": "menu availability flag",
+        "created_at": "creation timestamp"
+      },
+      "relationships": [
+        "Referenced by OrderItem.product_id.",
+        "Read by Gemini prompt and product resolver."
+      ]
+    },
+    {
+      "name": "Order",
+      "model": "app/models/order_model.py",
+      "schemas": [
+        "OrderCreate",
+        "OrderDTO",
+        "OrderFilters"
+      ],
+      "purpose": "Customer order created from checkout.",
+      "major_fields": {
+        "id": "UUID primary key",
+        "customer_name": "delivery customer name",
+        "customer_phone": "customer phone",
+        "delivery_address": "delivery address",
+        "status": "PENDING, PREPARING, or DELIVERING",
+        "total_price": "order total",
+        "created_at": "creation timestamp"
+      },
+      "relationships": [
+        "One Order has many OrderItem rows through Order.items.",
+        "Dashboard aggregates and order listings query Order."
+      ]
+    },
+    {
+      "name": "OrderItem",
+      "model": "app/models/order_item.py",
+      "schemas": [
+        "OrderItemCreate",
+        "OrderItemDTO"
+      ],
+      "purpose": "Line item joining an order to a product.",
+      "major_fields": {
+        "id": "UUID primary key",
+        "order_id": "foreign key to orders.id",
+        "product_id": "foreign key to products.id",
+        "quantity": "ordered quantity",
+        "unit_price": "captured unit price",
+        "subtotal": "quantity times unit price",
+        "created_at": "creation timestamp"
+      },
+      "relationships": [
+        "Belongs to Order.",
+        "References Product."
+      ]
+    },
+    {
+      "name": "ChatSession",
+      "model": "Redis JSON, no SQL table",
+      "schemas": [
+        "ChatSessionSchema",
+        "CartItemSchema"
+      ],
+      "purpose": "Stateful chat cart and checkout context keyed by session_id.",
+      "major_fields": {
+        "current_state": "idle, building_order, review_order, or checkout",
+        "cart_items": "list of CartItemSchema",
+        "customer_name": "optional checkout name",
+        "customer_phone": "optional checkout phone",
+        "delivery_address": "optional checkout address"
+      },
+      "relationships": [
+        "Cart items reference Product IDs.",
+        "Checkout converts session into Order and OrderItem rows."
+      ]
+    },
+    {
+      "name": "DashboardSummary",
+      "model": "Computed read model",
+      "schemas": [
+        "DashboardSummaryResponse",
+        "DashboardKPI",
+        "TopProduct",
+        "RecentOrder",
+        "SalesByDay"
+      ],
+      "purpose": "Aggregated operational metrics for management UI.",
+      "major_fields": {
+        "kpis": "order/revenue/status counts",
+        "top_products": "best-selling products",
+        "recent_orders": "latest orders",
+        "sales_by_day": "daily revenue totals"
+      },
+      "relationships": [
+        "Computed from Order, OrderItem, and Product tables."
+      ]
+    },
+    {
+      "name": "ChatLLM",
+      "model": "Pydantic-only LLM parsing schema",
+      "schemas": [
+        "ChatLLM",
+        "OrderItemLLM"
+      ],
+      "purpose": "Structured interpretation of user message returned by Gemini.",
+      "major_fields": {
+        "intent": "chat intent string",
+        "data": "items and optional customer data"
+      },
+      "relationships": [
+        "Input to chat state machine.",
+        "Resolved to products before cart mutation."
+      ]
+    }
+  ],
+  "entity_relationship_summary": [
+    "User authenticates API access.",
+    "Product is referenced by OrderItem.",
+    "Order has many OrderItems.",
+    "ChatSession cart items map to Product and become OrderItems at checkout.",
+    "DashboardSummary is a read model over orders, order items, and products.",
+    "Redis order events notify WebSocket clients after Order creation."
+  ]
+}

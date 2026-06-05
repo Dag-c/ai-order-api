@@ -1,1 +1,160 @@
-[{"severity":"medium","area":"websocket lifecycle","issue":"orders_ws keeps connections alive with sleep only; client disconnects may not be noticed until a later broadcast fails.","recommendation":"Receive ping/pong or messages, or add explicit heartbeat handling."},{"severity":"medium","area":"realtime consistency","issue":"Order creation publishes WebSocket events, but order status updates commit without publishing an event.","recommendation":"Publish an order_updated/status_changed event after successful status updates."},{"severity":"medium","area":"async redis listener","issue":"redis_listener uses the synchronous Redis client and polling sleep inside an async lifespan task.","recommendation":"Use redis.asyncio pubsub or run blocking Redis work outside the event loop."},{"severity":"medium","area":"session concurrency","issue":"Chat sessions are read, mutated and saved in Redis without locking or compare-and-set, so concurrent messages for one session can overwrite cart state.","recommendation":"Use Redis transactions/locks or serialize per-session processing."},{"severity":"medium","area":"security/logging","issue":"Gemini responses, Redis events and date filters are printed directly, which can leak user/order data and noisy internals.","recommendation":"Use redacted structured logging with environment-based log levels."},{"severity":"medium","area":"validation","issue":"ChatLLM.intent is a free string while handlers rely on a fixed intent set, and clear_cart exists in code but not in the prompt's allowed intents.","recommendation":"Use an enum for intents and keep prompt/schema/handlers aligned."},{"severity":"medium","area":"input validation","issue":"Product and cart quantity/price schemas do not enforce positive numeric bounds.","recommendation":"Add Pydantic constraints for quantity, stock and price fields."},{"severity":"medium","area":"stock integrity","issue":"Order creation does not appear to decrement stock or check availability at checkout time.","recommendation":"Validate stock atomically during order creation."},{"severity":"low","area":"configuration","issue":"session_store hardcodes SESSION_TTL_SECONDS to 3600 instead of using app.core.config.SESSION_TTL_SECONDS.","recommendation":"Import the configured TTL value."},{"severity":"low","area":"dashboard schema","issue":"dashboard_service returns created_at for recent orders, but RecentOrder schema does not declare it, so response_model may drop it.","recommendation":"Add created_at to RecentOrder or stop returning it."},{"severity":"low","area":"naming","issue":"Authentication dependency file is named authenticaion.py, which increases typo risk.","recommendation":"Rename consistently when safe to update imports."},{"severity":"low","area":"schema file","issue":"database/schema.sql starts with a literal 'sql' line, which may break direct execution.","recommendation":"Remove the stray marker if the file is meant to be executable SQL."}]
+{
+  "issues": [
+    {
+      "severity": "critical",
+      "location": "app/api/routers/users.py:12, app/schemas/user_schema.py:20",
+      "explanation": "User creation is public and accepts a client-provided role. This can allow unauthenticated account creation and privilege escalation.",
+      "recommended_fix": "Protect user creation behind admin authorization, remove role from public input, and assign roles server-side."
+    },
+    {
+      "severity": "high",
+      "location": "app/api/routers/orders.py:38",
+      "explanation": "POST /api/v1/orders/ is an unauthenticated placeholder that returns a success-like message without creating an order.",
+      "recommended_fix": "Remove the endpoint or implement real authenticated order creation with request schema, validation, service logic, and documented response."
+    },
+    {
+      "severity": "high",
+      "location": "app/api/routers/chat.py:11, app/services/gemini_service.py:519",
+      "explanation": "Public chat requests can trigger database, Redis, and Gemini calls. There is no rate limiting or abuse control, creating cost and availability risk.",
+      "recommended_fix": "Add per-IP/session/user rate limits, request body limits, timeout policy, and abuse monitoring around chat and LLM calls."
+    },
+    {
+      "severity": "high",
+      "location": "app/core/session_store.py:6, app/core/redis_listener.py:20",
+      "explanation": "Synchronous Redis client operations are used from async chat and listener flows, which can block the event loop under load.",
+      "recommended_fix": "Use redis.asyncio for session and pub/sub operations or isolate blocking Redis work outside the event loop."
+    },
+    {
+      "severity": "high",
+      "location": "app/api/routers/chat.py:11, app/services/gemini_service.py:444",
+      "explanation": "The async chat endpoint performs synchronous SQLAlchemy queries before awaiting Gemini. Blocking DB work inside async request handling can reduce concurrency.",
+      "recommended_fix": "Use async SQLAlchemy for async endpoints or make the endpoint synchronous and isolate external async work carefully."
+    },
+    {
+      "severity": "high",
+      "location": "app/api/websockets/orders_ws.py:21",
+      "explanation": "JWT is passed in a WebSocket query parameter, which is more likely to appear in logs, browser history, proxies, and monitoring tools.",
+      "recommended_fix": "Prefer a secure cookie, subprotocol-based token handoff, or short-lived one-time WebSocket ticket."
+    },
+    {
+      "severity": "medium",
+      "location": "app/api/websockets/orders_ws.py:46",
+      "explanation": "The WebSocket handler sleeps forever and does not read from the socket, send ping/pong heartbeats, or detect dead clients promptly.",
+      "recommended_fix": "Implement heartbeat/receive loop with timeouts and close stale connections deterministically."
+    },
+    {
+      "severity": "medium",
+      "location": "app/core/websocket_manager.py:7",
+      "explanation": "Active WebSocket connections are stored in process memory. Multi-worker or multi-instance deployments will have isolated connection lists.",
+      "recommended_fix": "Document single-worker constraints or use a shared WebSocket gateway/broker strategy that works across workers."
+    },
+    {
+      "severity": "medium",
+      "location": "app/main.py:35",
+      "explanation": "The lifespan finally block cancels redis_listener but does not await task completion; task.cancel is called twice.",
+      "recommended_fix": "Cancel once, await the task, and suppress asyncio.CancelledError during shutdown."
+    },
+    {
+      "severity": "medium",
+      "location": "app/main.py:20",
+      "explanation": "Startup checks run at module import time, which can break imports in tooling/tests and reduces control over startup/readiness behavior.",
+      "recommended_fix": "Move startup checks into lifespan startup or a dedicated readiness check path."
+    },
+    {
+      "severity": "medium",
+      "location": "app/core/config.py:95",
+      "explanation": "CORS_ORIGINS defaults to [''] when unset. This is safer than localhost hardcoding but can silently misconfigure production CORS.",
+      "recommended_fix": "Require CORS_ORIGINS in production, strip empty entries, and fail fast when ENV=production and no valid origin is configured."
+    },
+    {
+      "severity": "medium",
+      "location": "app/core/config.py:88, app/core/session_store.py:11",
+      "explanation": "SESSION_TTL_SECONDS is read from env but session_store hardcodes 60 * 60, so runtime configuration is ignored.",
+      "recommended_fix": "Import SESSION_TTL_SECONDS from config into session_store and validate it once."
+    },
+    {
+      "severity": "medium",
+      "location": "app/core/security.py:14",
+      "explanation": "JWT expiration is hardcoded to 8 hours and token validation does not enforce issuer, audience, role, or revocation.",
+      "recommended_fix": "Move TTL/issuer/audience to config, validate claims, and add role-based authorization for privileged operations."
+    },
+    {
+      "severity": "medium",
+      "location": "app/api/routers/products.py:46, app/api/routers/products.py:62",
+      "explanation": "Product update endpoints dereference product_updated without checking for None. Missing products can cause 500 responses.",
+      "recommended_fix": "Return HTTP 404 when update_product_service or update_product_patch_service returns None."
+    },
+    {
+      "severity": "medium",
+      "location": "app/api/routers/products.py:78",
+      "explanation": "DELETE /products/{product_id} types product_id as str while service/repository expect UUID-like input. Invalid IDs can produce DB errors instead of FastAPI validation.",
+      "recommended_fix": "Type product_id as UUID in the router."
+    },
+    {
+      "severity": "medium",
+      "location": "app/schemas/product_schema.py:4, app/schemas/cart_item_schema.py:33, app/schemas/order_item_schema.py:6",
+      "explanation": "Price, stock, quantity, and subtotal fields lack numeric bounds and use float for money.",
+      "recommended_fix": "Use Decimal for money and Pydantic constraints such as gt/ge for prices, stock, and quantities."
+    },
+    {
+      "severity": "medium",
+      "location": "app/services/product_resolver_service.py:14",
+      "explanation": "Product resolution uses partial ilike matching and does not enforce is_available or stock, so chat orders can match unintended or unavailable products.",
+      "recommended_fix": "Resolve against available products only, reject ambiguous matches, and enforce inventory before adding to cart or creating orders."
+    },
+    {
+      "severity": "medium",
+      "location": "app/repositories/order_repository.py:39, app/repositories/product_repository.py:29",
+      "explanation": "List endpoints return all matching records without pagination. Orders and products can grow unbounded.",
+      "recommended_fix": "Add pagination, limits, indexes for filter fields, and documented query parameters."
+    },
+    {
+      "severity": "medium",
+      "location": "app/core/database.py:7",
+      "explanation": "Database engine only uses pool_pre_ping. Pool size, overflow, recycle, connection timeout, and statement timeout are not tuned.",
+      "recommended_fix": "Configure pool and timeout settings according to deployment capacity and database limits."
+    },
+    {
+      "severity": "medium",
+      "location": "app/services/gemini_service.py:548",
+      "explanation": "Non-200 Gemini responses include response.text in returned details, and parse failures include raw_response. Provider payloads may leak to API clients through chat responses.",
+      "recommended_fix": "Log provider details server-side with redaction and return a generic client-safe error."
+    },
+    {
+      "severity": "medium",
+      "location": "app/core/redis_listener.py:31",
+      "explanation": "Redis event payloads are logged at info level. Order events can include customer/order data.",
+      "recommended_fix": "Log only event type and IDs, or redact PII before logging."
+    },
+    {
+      "severity": "medium",
+      "location": "app/schemas/auth_schema.py:3, app/schemas/user_schema.py:20",
+      "explanation": "Email and password are plain strings with no EmailStr validation, length limits, or password policy.",
+      "recommended_fix": "Use EmailStr, min/max length constraints, password policy validation, and email normalization."
+    },
+    {
+      "severity": "low",
+      "location": "app/core/authenticaion.py",
+      "explanation": "Filename is misspelled. Imports work, but discoverability and maintenance suffer.",
+      "recommended_fix": "Rename through a compatibility migration or add a correctly named auth module wrapper."
+    },
+    {
+      "severity": "low",
+      "location": "app/api/routers/orders.py:3",
+      "explanation": "Duplicate and unused imports remain in the orders router.",
+      "recommended_fix": "Clean imports during routine maintenance."
+    },
+    {
+      "severity": "low",
+      "location": "database/schema.sql:1",
+      "explanation": "The schema file starts with a literal 'sql' token, which can break direct SQL execution.",
+      "recommended_fix": "Remove the stray marker and manage schema through migrations."
+    },
+    {
+      "severity": "low",
+      "location": "Dockerfile:1",
+      "explanation": "Production image has no container healthcheck and appears to run as root.",
+      "recommended_fix": "Add Docker HEALTHCHECK and run the app as a non-root user."
+    }
+  ]
+}

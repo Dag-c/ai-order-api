@@ -1,1 +1,138 @@
-{"project_type":"FastAPI backend","architecture_style":["router-service-repository layering","SQLAlchemy ORM","Pydantic schemas/DTOs","JWT bearer auth","Gemini intent parsing","state machine conversation flow","Redis session storage/pubsub","WebSocket order notifications"],"entrypoints":["app/main.py","app/api/api_v1.py"],"main_modules":[{"module":"api routers","responsibility":"Expose auth, users, products, orders, dashboard and chat HTTP endpoints."},{"module":"api websockets","responsibility":"Expose authenticated order events under /api/v1/ws/orders."},{"module":"services","responsibility":"Coordinate auth, chat orchestration, products, orders and dashboard use cases."},{"module":"repositories","responsibility":"Query and persist users, products, orders, order items and dashboard aggregates."},{"module":"models","responsibility":"Define SQLAlchemy tables and relationships for users, products, orders and order_items."},{"module":"schemas","responsibility":"Validate requests, filters, chat state, cart items, DTOs and dashboard responses."},{"module":"mappers","responsibility":"Convert ORM order graphs into response DTOs."},{"module":"core auth/security","responsibility":"Hash passwords, issue JWTs and validate REST/WebSocket tokens."},{"module":"core state machine","responsibility":"Dispatch chat intents across idle, building_order, review_order and checkout states."},{"module":"core events","responsibility":"Publish order events to Redis and broadcast them to WebSocket clients."},{"module":"Gemini integration","responsibility":"Build prompt from current state and products, call Gemini, validate JSON intent output."}],"main_flow":["FastAPI app","/api/v1 router","feature router","service","repository","SQLAlchemy model","PostgreSQL"],"chat_flow":["chat router","chat_service.process_chat","Redis session_store","gemini_service.analyze_chat_message","chat_state_machine.handle_chat_state","state handler","product/order services","repositories"],"order_event_flow":["checkout_state creates order","events.publish_order_event","Redis orders channel","redis_listener","websocket_manager.broadcast","orders_ws clients"],"auth_flow":["auth router","auth_service.login_service","user_repository.get_user_by_email","security.verify_password","security.create_access_token","get_current_user/validate_token"],"dashboard_flow":["dashboard router","dashboard_service","dashboard_repository aggregate queries","DashboardSummaryResponse"],"database":["app/core/database.py configures engine/session/Base from app/core/config.py","startup checks validate PostgreSQL and Redis","database/schema.sql mirrors core tables"],"deployment":["Dockerfile for production uvicorn","Dockerfile.dev and docker-compose.dev.yml for local API plus Redis"]}
+{
+  "application_type": "Production-oriented FastAPI backend for an AI-assisted restaurant ordering system.",
+  "architecture_style": {
+    "summary": "Layered FastAPI application with routers, services, repositories, SQLAlchemy models, Pydantic schemas, Redis-backed chat sessions, and WebSocket notifications.",
+    "entrypoint": "app/main.py configures logging, startup checks, FastAPI lifespan, CORS, health check, and /api/v1 router mounting.",
+    "layers": [
+      "API routers in app/api/routers and app/api/websockets",
+      "Business services in app/services",
+      "Data access repositories in app/repositories",
+      "SQLAlchemy ORM models in app/models",
+      "Pydantic schemas/DTOs in app/schemas",
+      "Core infrastructure in app/core"
+    ]
+  },
+  "major_business_modules": [
+    "Authentication",
+    "Users",
+    "Products",
+    "Orders",
+    "AI Chat Ordering",
+    "Dashboard Metrics",
+    "Real-Time Order Notifications"
+  ],
+  "router_organization": {
+    "root_router": "app/api/api_v1.py",
+    "prefix": "/api/v1",
+    "routers": {
+      "/login": "app/api/routers/auth.py",
+      "/users": "app/api/routers/users.py",
+      "/products": "app/api/routers/products.py",
+      "/orders": "app/api/routers/orders.py",
+      "/chat": "app/api/routers/chat.py",
+      "/dashboard": "app/api/routers/dashboard.py",
+      "/ws": "app/api/websockets/orders_ws.py"
+    }
+  },
+  "service_organization": {
+    "auth_service": "Validates credentials and issues JWTs.",
+    "user_service": "Hashes passwords and creates users.",
+    "product_service": "Thin wrapper around product repository operations.",
+    "order_service": "Creates orders from chat sessions and maps orders to DTOs.",
+    "chat_service": "Loads Redis chat session, calls Gemini parser, dispatches state machine, and saves session.",
+    "gemini_service": "Builds prompt with current state and menu, calls Gemini generateContent, validates structured JSON.",
+    "dashboard_service": "Transforms aggregate repository rows into dashboard response objects.",
+    "product_resolver_service": "Maps LLM product names to database Product rows using partial name matching."
+  },
+  "repository_data_access": {
+    "pattern": "Synchronous SQLAlchemy Session passed from FastAPI dependency into repositories.",
+    "repositories": [
+      "user_repository",
+      "product_repository",
+      "order_repository",
+      "order_item_repository",
+      "dashboard_repository",
+      "order_query_builder"
+    ],
+    "transaction_style": "Most simple writes commit in repositories; chat order creation coordinates order and item inserts in order_service before a single commit."
+  },
+  "schema_organization": {
+    "request_schemas": [
+      "LoginSchema",
+      "UserCreate",
+      "ProductCreate",
+      "ProductUpdate",
+      "ChatRequest",
+      "UpdateOrderStatusSchema"
+    ],
+    "domain_and_dto_schemas": [
+      "OrderCreate",
+      "OrderItemCreate",
+      "OrderDTO",
+      "OrderItemDTO",
+      "CartItemSchema",
+      "ChatSessionSchema",
+      "ChatLLM",
+      "DashboardSummaryResponse"
+    ],
+    "observations": "Schemas are organized by feature but have limited validation constraints for email, password, money, stock, and quantities."
+  },
+  "websocket_architecture": {
+    "endpoint": "/api/v1/ws/orders",
+    "authentication": "JWT token is expected in websocket query params and validated with validate_token.",
+    "connection_manager": "In-memory list of active WebSocket objects in app/core/websocket_manager.py.",
+    "event_source": "Redis pub/sub channel orders.",
+    "broadcast_flow": "Order checkout publishes an event to Redis; app lifespan listener receives it and broadcasts JSON to active WebSocket connections."
+  },
+  "authentication_architecture": {
+    "scheme": "HTTP Bearer JWT using python-jose.",
+    "password_hashing": "pwdlib PasswordHash.recommended().",
+    "token_payload": "sub and email, exp hardcoded to 8 hours.",
+    "dependency": "get_current_user validates JWT and loads User by email.",
+    "protected_areas": [
+      "product create/update/delete",
+      "order list/status update",
+      "dashboard summary",
+      "orders websocket"
+    ],
+    "public_areas": [
+      "login",
+      "user creation",
+      "product listing/detail",
+      "chat",
+      "health"
+    ]
+  },
+  "redis_usage": {
+    "chat_session_store": "Stores ChatSessionSchema JSON per session_id with TTL.",
+    "order_events": "Publishes order_created events to the orders channel.",
+    "listener": "Background lifespan task polls Redis pub/sub and broadcasts events to websockets.",
+    "client": "Uses synchronous redis client."
+  },
+  "external_integrations": [
+    {
+      "name": "PostgreSQL",
+      "usage": "Primary relational database via SQLAlchemy and psycopg2."
+    },
+    {
+      "name": "Redis",
+      "usage": "Chat sessions and real-time order event pub/sub."
+    },
+    {
+      "name": "Google Gemini API",
+      "usage": "Natural-language chat intent and structured order extraction."
+    }
+  ],
+  "startup_lifecycle": {
+    "import_time": "setup_logging and run_startup_checks execute before FastAPI app starts.",
+    "startup_checks": "Database SELECT 1 and Redis ping.",
+    "lifespan_start": "Creates redis_listener asyncio task.",
+    "lifespan_shutdown": "Cancels listener task."
+  },
+  "deployment_architecture": {
+    "docker": "Dockerfile uses python:3.12-slim, installs requirements, copies app, and runs uvicorn on ${PORT:-10000}.",
+    "development_compose": "docker-compose.dev.yml runs API with reload and a Redis service.",
+    "health": "HTTP /health validates database connectivity.",
+    "render": "No explicit render.yaml found; Dockerfile dynamic PORT support is compatible with Render-like platforms."
+  }
+}
