@@ -1,15 +1,12 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
-from uuid import UUID
-
 from app.models.user_model import User
-from app.schemas.user_schema import UserCreate, UserUpdate
+from app.schemas.user_schema import UserCreate
 
 def create_user(db: Session, user_data: UserCreate, hashed_password):
     user = User(
         email = user_data.email,
         password_hash = hashed_password,
-        role = user_data.role
+        role = "employee"
     )
 
     db.add(user)
