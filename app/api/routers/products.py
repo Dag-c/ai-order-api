@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -16,6 +16,10 @@ router = APIRouter()
 
 @router.post("/")
 def create_product(product: ProductCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     new_product = create_product_service(db, product)
 
     return {
@@ -45,7 +49,15 @@ def get_product(product_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{product_id}")
 def update_product(product_id: UUID, product: ProductCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     product_updated = update_product_service(db, product_id, product)
+
+    if not product_updated:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
     return {
         "message": "Product updated",
         "product": {
@@ -61,7 +73,15 @@ def update_product(product_id: UUID, product: ProductCreate, db: Session = Depen
 
 @router.patch("/{product_id}")
 def update_product(product_id: UUID, product: ProductUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     product_updated = update_product_patch_service(db, product_id, product)
+    
+    if not product_updated:
+        raise HTTPException(status_code=404, detail="Product not found")
+
     return {
         "message": "Product updated",
         "product": {
@@ -76,7 +96,11 @@ def update_product(product_id: UUID, product: ProductUpdate, db: Session = Depen
     }
 
 @router.delete("/{product_id}")
-def delete_product(product_id: str, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def delete_product(product_id: UUID, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     product = delete_product_service(db, product_id)
 
     if not product:
