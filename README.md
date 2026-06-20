@@ -227,3 +227,7 @@ Backend engineering portfolio project designed to demonstrate:
 - Real-time distributed communication
 - Scalable backend design patterns
 - Production deployment workflows
+
+## Related Repositories
+
+- Frontend UI: https://github.com/Dag-c/ai-order-web
