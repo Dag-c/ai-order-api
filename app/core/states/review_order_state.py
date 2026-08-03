@@ -21,7 +21,7 @@ async def handle_review_order_state(
 
         return {
             "type": "order_summary",
-            "message": "Este es tu pedido:",
+            "message": "Here is your order:",
             "data": {
                 "items": [
                     item.model_dump()
@@ -69,8 +69,8 @@ async def handle_review_order_state(
             return {
                 "type": "message",
                 "message": (
-                    "Tu carrito está vacío 👍 "
-                    "Primero agrega algunos productos"
+                    "Your cart is empty 👍 "
+                    "Please add some items first"
                 ),
                 "data": {}
             }
@@ -80,9 +80,8 @@ async def handle_review_order_state(
         return {
             "type": "checkout_form",
             "message": (
-                "Perfecto 👍 "
-                "Ahora necesito tu nombre, "
-                "teléfono y dirección"
+                "Perfect 👍 "
+                "I need your name, phone number, and address"
             ),
             "data": {}
         }
@@ -93,8 +92,8 @@ async def handle_review_order_state(
     return {
         "type": "message",
         "message": (
-            "No entendí 😅 "
-            "¿quieres confirmar tu pedido o modificar algo?"
+            "I didn't understand 😅 "
+            "Would you like to confirm your order or modify something?"
         ),
         "data": {}
     }

@@ -27,7 +27,7 @@ async def handle_building_order_state(
         if not resolved_items:
             return {
                 "type": "message",
-                "message": "No pude agregar esos productos",
+                "message": "I couldn't add those products",
                 "data": {}
             }
 
@@ -58,7 +58,7 @@ async def handle_building_order_state(
 
         return {
             "type": "message",
-            "message": "Listo 👍 ¿Quieres algo más o revisamos tu orden?",
+            "message": "Done 👍 Would you like anything else or should we review your order?",
             "data": {}
         }
 
@@ -77,7 +77,7 @@ async def handle_building_order_state(
         if not resolved_items:
             return {
                 "type": "message",
-                "message": "No encontré esos productos en tu carrito",
+                "message": "I couldn't find those products in your cart",
                 "data": {}
             }
 
@@ -98,7 +98,7 @@ async def handle_building_order_state(
 
         return {
             "type": "message",
-            "message": "Listo 👍 actualicé tu carrito",
+            "message": "Done 👍 I updated your cart",
             "data": {}
         }
 
@@ -111,7 +111,7 @@ async def handle_building_order_state(
 
         return {
             "type": "message",
-            "message": "Carrito vaciado 👍 ¿Qué te gustaría ordenar?",
+            "message": "Cart cleared 👍 What would you like to order?",
             "data": {}
         }
 
@@ -128,7 +128,7 @@ async def handle_building_order_state(
 
         return {
             "type": "order_summary",
-            "message": "Este es tu pedido:",
+            "message": "Here is your order:",
             "data": {
                 "items": [item.model_dump() for item in session.cart_items],
                 "total": total
@@ -140,6 +140,6 @@ async def handle_building_order_state(
     # =========================
     return {
         "type": "message",
-        "message": "No entendí 😅 ¿quieres agregar algo más o revisar tu pedido?",
+        "message": "I didn't understand 😅 Would you like to add something else or review your order?",
         "data": {}
     }

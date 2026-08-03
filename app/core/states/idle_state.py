@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from config import RESTAURANT_NAME
 
 from app.services.product_service import (
     get_available_products_service
@@ -31,8 +32,7 @@ async def handle_idle_state(
         return {
             "type": "message",
             "message": (
-                "Hola, bienvenido. "
-                "¿Qué te gustaría ordenar?"
+                f"Welcome to {RESTAURANT_NAME}! 🌮 What would you like to order today?"
             ),
             "data": {}
         }
@@ -48,7 +48,7 @@ async def handle_idle_state(
         return {
             "type": "menu",
             "message": (
-                "Estos son los platillos disponibles"
+                "Here are today's available dishes"
             ),
             "data": {
                 "products": products
@@ -73,7 +73,7 @@ async def handle_idle_state(
             return {
                 "type": "message",
                 "message": (
-                    "No encontré ese producto"
+                    "I couldn't find that product"
                 ),
                 "data": {}
             }
@@ -86,7 +86,7 @@ async def handle_idle_state(
         return {
             "type": "availability",
             "message": (
-                "Sí tenemos disponible:"
+                "We have these products available:"
             ),
             "data": {
                 "products": available_products
@@ -112,7 +112,7 @@ async def handle_idle_state(
             return {
                 "type": "message",
                 "message": (
-                    "No pude agregar productos"
+                    "I couldn't add those products"
                 ),
                 "data": {}
             }
@@ -126,7 +126,7 @@ async def handle_idle_state(
         )
 
         # =========================
-        # CONVERT DICTS → SCHEMA
+        # CONVERT DICTS TO SCHEMA
         # =========================
 
         session.cart_items.extend(
@@ -139,8 +139,8 @@ async def handle_idle_state(
         return {
             "type": "message",
             "message": (
-                "Agregado al carrito 👍 "
-                "¿Deseas algo más?"
+                "Added to your cart 👍 "
+                "Would you like anything else?"
             ),
             "data": {}
         }
@@ -152,7 +152,7 @@ async def handle_idle_state(
     return {
         "type": "message",
         "message": (
-            "No entendí tu solicitud"
+            "I didn't understand your request"
         ),
         "data": {}
     }

@@ -32,29 +32,29 @@ async def handle_checkout_state(
     missing_fields = []
 
     if not session.customer_name:
-        missing_fields.append("nombre")
+        missing_fields.append("name")
 
     if not session.customer_phone:
-        missing_fields.append("teléfono")
+        missing_fields.append("phone")
 
     if not session.delivery_address:
-        missing_fields.append("dirección")
+        missing_fields.append("address")
 
     if missing_fields:
         return {
             "type": "checkout_form",
-            "message": "Para continuar necesito: " + ", ".join(missing_fields),
+            "message": "To continue, I need: " + ", ".join(missing_fields),
             "data": {}
         }
 
     # =========================
-    # VALIDATE CART (IMPORTANTE)
+    # VALIDATE CART (IMPORTANT)
     # =========================
 
     if not session.cart_items:
         return {
             "type": "message",
-            "message": "Tu carrito está vacío",
+            "message": "Your cart is empty",
             "data": {}
         }
 
@@ -85,7 +85,7 @@ async def handle_checkout_state(
 
     return {
         "type": "order_created",
-        "message": "Tu orden fue creada correctamente",
+        "message": "Your order has been created successfully",
         "data": {
             "order_id": created_order.id,
             "total": created_order.total,

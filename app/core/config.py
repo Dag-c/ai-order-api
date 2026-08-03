@@ -93,3 +93,5 @@ SESSION_TTL_SECONDS = int(
 )
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
+
+RESTAURANT_NAME= os.getenv("RESTAURANT_NAME", "Doña Su")
