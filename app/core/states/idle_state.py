@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from config import RESTAURANT_NAME
+from app.core.config import RESTAURANT_NAME
 
 from app.services.product_service import (
     get_available_products_service
